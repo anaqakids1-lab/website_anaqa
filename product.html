@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — Anaqa Kids</title>
+  <meta name="description" content="Shop premium children's clothing at Anaqa Kids, Srinagar." />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/styles/main.css" />
+  <style>
+    /* ── Product Detail Page ──────────────────────────────── */
+    .product-detail-page { padding: 40px 0 80px; }
+
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-muted); margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--teal); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb-sep { opacity: .4; }
+
+    /* ── Gallery + Info Layout ────────────────────────────── */
+    .product-detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start;
+    }
+
+    /* ── Gallery ──────────────────────────────────────────── */
+    .gallery-main {
+      aspect-ratio: 4/5; border-radius: 16px; overflow: hidden;
+      background: var(--cream); position: relative;
+    }
+    .gallery-main img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: opacity .25s;
+    }
+    .gallery-main .no-image {
+      width: 100%; height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+      color: var(--text-muted); font-size: 14px;
+    }
+    .gallery-main .no-image svg { opacity: .3; }
+
+    /* Navigation arrows on main image */
+    .gallery-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,.85); border: none; cursor: pointer;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm); transition: all .2s; z-index: 2;
+    }
+    .gallery-nav:hover { background: #fff; box-shadow: var(--shadow-md); }
+    .gallery-nav.prev { left: 12px; }
+    .gallery-nav.next { right: 12px; }
+    .gallery-nav.hidden { display: none; }
+
+    .gallery-thumbs {
+      display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .gallery-thumb {
+      width: 72px; height: 80px; border-radius: 8px; overflow: hidden;
+      border: 2px solid transparent; cursor: pointer; transition: border-color .2s;
+      background: var(--cream); flex-shrink: 0;
+    }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-thumb.active { border-color: var(--teal); }
+    .gallery-thumb:hover { border-color: var(--teal-light); }
+
+    /* ── Product Info ─────────────────────────────────────── */
+    .product-info { display: flex; flex-direction: column; gap: 20px; }
+
+    .product-info .category-tag {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      background: var(--cream); color: var(--gold); font-size: 11px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    }
+    .product-info h1 {
+      font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 3vw, 2.2rem);
+      color: var(--teal-dark); line-height: 1.2; margin: 0;
+    }
+    .product-info .price-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .product-info .price-main { font-size: 2rem; font-weight: 700; color: var(--teal); }
+    .product-info .price-original { font-size: 1.1rem; color: var(--text-muted); text-decoration: line-through; }
+    .product-info .price-discount {
+      background: #ffeaea; color: var(--danger); font-size: 13px;
+      font-weight: 700; padding: 3px 9px; border-radius: 20px;
+    }
+    .product-info .stock-line {
+      font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
+    }
+    .stock-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .stock-dot.low { background: #E67E22; }
+    .stock-dot.out { background: var(--danger); }
+
+    /* ── Size Selector ───────────────────────────────────── */
+    .size-section { display: flex; flex-direction: column; gap: 10px; }
+    .size-label {
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .size-label span { color: var(--teal); font-weight: 700; margin-left: 6px; }
+    .sizes-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+    .size-btn {
+      min-width: 52px; height: 42px; padding: 0 14px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--white); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .2s; color: var(--text);
+    }
+    .size-btn:hover { border-color: var(--teal); color: var(--teal); }
+    .size-btn.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .size-required-hint { font-size: 12px; color: var(--danger); display: none; }
+    .size-required-hint.show { display: block; }
+
+    /* ── Description ─────────────────────────────────────── */
+    .product-description { font-size: 15px; line-height: 1.8; color: var(--text-muted); }
+
+    /* ── Action Buttons ──────────────────────────────────── */
+    .action-buttons { display: flex; flex-direction: column; gap: 12px; }
+    .action-buttons .btn { justify-content: center; padding: 14px; font-size: 15px; }
+
+    /* ── Related Products ────────────────────────────────── */
+    .related-section { padding: 60px 0; background: var(--cream); }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .product-detail-grid { grid-template-columns: 1fr; gap: 28px; }
+      .product-detail-page { padding: 24px 0 60px; }
+      .gallery-thumb { width: 60px; height: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header class="header" id="header">
+  <div class="header-inner container">
+    <a href="index.html" class="logo">
+      <span class="logo-ar">عناقة</span>
+      <span class="logo-en">ANAQA KIDS</span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="index.html" class="nav-link">Shop</a>
+      <a href="index.html#featured" class="nav-link">Featured</a>
+      <a href="index.html#new-arrivals" class="nav-link">New Arrivals</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="authBtn" aria-label="Account">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+      <button class="icon-btn cart-btn" id="cartBtn" aria-label="Cart">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </button>
+      <button class="icon-btn mobile-menu-btn" id="menuBtn" aria-label="Menu">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── PRODUCT DETAIL ──────────────────────────────────────── -->
+<div id="loadingState" style="padding:80px 0;text-align:center;color:var(--text-muted)">
+  Loading product…
+</div>
+
+<section class="product-detail-page container" id="productPage" style="display:none">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" id="breadcrumb">
+    <a href="index.html">Shop</a>
+    <span class="breadcrumb-sep">›</span>
+    <span id="breadcrumbCat"></span>
+    <span class="breadcrumb-sep">›</span>
+    <span id="breadcrumbName"></span>
+  </nav>
+
+  <div class="product-detail-grid">
+    <!-- Gallery -->
+    <div>
+      <div class="gallery-main" id="galleryMain">
+        <button class="gallery-nav prev hidden" id="galleryPrev">‹</button>
+        <img id="mainImage" src="" alt="" />
+        <button class="gallery-nav next hidden" id="galleryNext">›</button>
+      </div>
+      <div class="gallery-thumbs" id="galleryThumbs"></div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-info" id="productInfo">
+      <span class="category-tag" id="infoCategory"></span>
+      <h1 id="infoName"></h1>
+
+      <div class="price-row">
+        <span class="price-main" id="infoPrice"></span>
+        <span class="price-original" id="infoOriginalPrice" style="display:none"></span>
+        <span class="price-discount" id="infoDiscount" style="display:none"></span>
+      </div>
+
+      <div class="stock-line">
+        <span class="stock-dot" id="stockDot"></span>
+        <span id="stockText"></span>
+      </div>
+
+      <!-- Size Selector -->
+      <div class="size-section" id="sizeSection" style="display:none">
+        <p class="size-label">Size: <span id="selectedSizeLabel">— select one</span></p>
+        <div class="sizes-grid" id="sizesGrid"></div>
+        <p class="size-required-hint" id="sizeHint">Please select a size to continue</p>
+      </div>
+
+      <!-- Description -->
+      <p class="product-description" id="infoDesc"></p>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="addToCartBtn" style="font-size:15px;padding:14px">
+          Add to Cart
+        </button>
+        <button class="btn btn-whatsapp" id="buyNowBtn" style="font-size:15px;padding:14px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Order via WhatsApp
+        </button>
+      </div>
+
+      <!-- Store info -->
+      <div style="border-top:1px solid var(--border);padding-top:16px;font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:6px">
+        <span>📍 Baghi Mehtab, Near J&K Bank, Srinagar</span>
+        <span>📞 <a href="tel:+919103228518" style="color:var(--teal)">+91 9103228518</a></span>
+        <span>🚚 Local delivery available in Srinagar</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RELATED PRODUCTS ────────────────────────────────────── -->
+<section class="related-section" id="relatedSection" style="display:none">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-eyebrow">You may also like</p>
+      <h2 class="section-title">Similar Products</h2>
+    </div>
+    <div class="products-grid" id="relatedGrid"></div>
+  </div>
+</section>
+
+<!-- ── CART DRAWER ─────────────────────────────────────────── -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-drawer-header">
+    <h3>Your Cart</h3>
+    <button class="icon-btn" id="cartClose">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer" id="cartFooter"></div>
+</aside>
+
+<!-- ── CHECKOUT MODAL ──────────────────────────────────────── -->
+<div class="modal-overlay" id="checkoutOverlay">
+  <div class="modal" id="checkoutModal">
+    <div class="modal-header">
+      <h3>Complete Your Order</h3>
+      <button class="modal-close" id="checkoutClose">✕</button>
+    </div>
+    <form id="checkoutForm" class="checkout-form">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="coName" required placeholder="Your full name" />
+      </div>
+      <div class="form-group">
+        <label>WhatsApp Number *</label>
+        <input type="tel" id="coPhone" required placeholder="+91 XXXXXXXXXX" />
+      </div>
+      <div class="form-group">
+        <label>Delivery Address</label>
+        <textarea id="coAddress" rows="3" placeholder="Your delivery address in Srinagar"></textarea>
+      </div>
+      <div class="order-summary" id="checkoutSummary"></div>
+      <button type="submit" class="btn btn-whatsapp btn-block">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Send Order via WhatsApp
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ── FOOTER ──────────────────────────────────────────────── -->
+<footer class="footer" style="margin-top:0">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo-ar" style="font-size:1.6rem">عناقة</span>
+      <span class="logo-en">ANAQA KIDS</span>
+      <p>Premium children's clothing.<br>Baghi Mehtab, Near J&K Bank, Srinagar.</p>
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Shop</a>
+      <a href="https://wa.me/919103228518" target="_blank">WhatsApp Us</a>
+    </div>
+  </div>
+  <div class="footer-bottom container"><p>© 2024 Anaqa Kids. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container"></div>
+
+<script type="module">
+import { getProduct, getProducts, createOrder, getSession } from './src/lib/supabase.js';
+import { cart } from './src/lib/cart.js';
+
+// ── State ─────────────────────────────────────────────────────
+let product = null;
+let currentImageIdx = 0;
+let selectedSize = '';
+
+// ── Load Product from URL ─────────────────────────────────────
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (!id) { window.location.href = 'index.html'; return; }
+
+  renderCartBadge();
+  bindCartDrawer();
+  bindCheckout();
+  document.getElementById('menuBtn')?.addEventListener('click', () => document.getElementById('nav').classList.toggle('open'));
+
+  try {
+    product = await getProduct(id);
+    renderProduct(product);
+    loadRelated(product.category, product.id);
+  } catch (e) {
+    document.getElementById('loadingState').textContent = 'Product not found.';
+  }
+}
+
+// ── Render Product ────────────────────────────────────────────
+function renderProduct(p) {
+  document.title = `${p.name} — Anaqa Kids`;
+
+  // Breadcrumb
+  document.getElementById('breadcrumbCat').textContent = capitalize(p.category);
+  document.getElementById('breadcrumbName').textContent = p.name;
+
+  // Gallery — merge images array + legacy image_url, deduplicate
+  const images = [];
+  if (p.images && p.images.length) images.push(...p.images.filter(Boolean));
+  if (p.image_url && !images.includes(p.image_url)) images.push(p.image_url);
+
+  renderGallery(images);
+
+  // Info
+  document.getElementById('infoCategory').textContent = capitalize(p.category);
+  document.getElementById('infoName').textContent = p.name;
+  document.getElementById('infoPrice').textContent = `₹${Number(p.price).toFixed(2)}`;
+  document.getElementById('infoDesc').textContent = p.description || '';
+
+  if (p.original_price) {
+    const discount = Math.round((1 - p.price / p.original_price) * 100);
+    document.getElementById('infoOriginalPrice').textContent = `₹${Number(p.original_price).toFixed(2)}`;
+    document.getElementById('infoOriginalPrice').style.display = '';
+    if (discount > 0) {
+      document.getElementById('infoDiscount').textContent = `${discount}% OFF`;
+      document.getElementById('infoDiscount').style.display = '';
+    }
+  }
+
+  // Stock
+  const dot = document.getElementById('stockDot');
+  const txt = document.getElementById('stockText');
+  if (p.stock === 0) {
+    dot.className = 'stock-dot out'; txt.textContent = 'Out of stock';
+  } else if (p.stock < 5) {
+    dot.className = 'stock-dot low'; txt.textContent = `Only ${p.stock} left!`;
+  } else {
+    dot.className = 'stock-dot'; txt.textContent = 'In stock';
+  }
+
+  // Sizes
+  const sizes = p.sizes && p.sizes.length ? p.sizes : [];
+  if (sizes.length) {
+    document.getElementById('sizeSection').style.display = '';
+    renderSizes(sizes);
+  }
+
+  // Disable buttons if out of stock
+  if (p.stock === 0) {
+    document.getElementById('addToCartBtn').disabled = true;
+    document.getElementById('addToCartBtn').textContent = 'Out of Stock';
+    document.getElementById('buyNowBtn').disabled = true;
+  } else {
+    document.getElementById('addToCartBtn').addEventListener('click', handleAddToCart);
+    document.getElementById('buyNowBtn').addEventListener('click', handleBuyNow);
+  }
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('productPage').style.display = '';
+}
+
+// ── Gallery ───────────────────────────────────────────────────
+function renderGallery(images) {
+  const mainImg = document.getElementById('mainImage');
+  const thumbsEl = document.getElementById('galleryThumbs');
+  const prevBtn = document.getElementById('galleryPrev');
+  const nextBtn = document.getElementById('galleryNext');
+  const mainWrap = document.getElementById('galleryMain');
+
+  if (!images.length) {
+    mainWrap.innerHTML = `<div class="no-image">
+      <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>No image available</span>
+    </div>`;
+    return;
+  }
+
+  function showImage(idx) {
+    currentImageIdx = idx;
+    mainImg.src = images[idx];
+    mainImg.alt = product?.name || '';
+    thumbsEl.querySelectorAll('.gallery-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+    prevBtn.classList.toggle('hidden', images.length <= 1);
+    nextBtn.classList.toggle('hidden', images.length <= 1);
+  }
+
+  // Thumbs
+  thumbsEl.innerHTML = images.map((url, i) =>
+    `<div class="gallery-thumb${i === 0 ? ' active' : ''}" data-idx="${i}">
+      <img src="${escHtml(url)}" alt="Photo ${i + 1}" loading="lazy" />
+    </div>`
+  ).join('');
+
+  thumbsEl.querySelectorAll('.gallery-thumb').forEach(t =>
+    t.addEventListener('click', () => showImage(+t.dataset.idx))
+  );
+
+  prevBtn.addEventListener('click', () => showImage((currentImageIdx - 1 + images.length) % images.length));
+  nextBtn.addEventListener('click', () => showImage((currentImageIdx + 1) % images.length));
+
+  showImage(0);
+}
+
+// ── Sizes ─────────────────────────────────────────────────────
+function renderSizes(sizes) {
+  const grid = document.getElementById('sizesGrid');
+  grid.innerHTML = sizes.map(s =>
+    `<button class="size-btn" data-size="${escHtml(s)}">${escHtml(s)}</button>`
+  ).join('');
+
+  grid.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedSize = btn.dataset.size;
+      document.getElementById('selectedSizeLabel').textContent = selectedSize;
+      document.getElementById('sizeHint').classList.remove('show');
+    });
+  });
+}
+
+// ── Add to Cart ───────────────────────────────────────────────
+function handleAddToCart() {
+  const sizes = product.sizes && product.sizes.length ? product.sizes : [];
+  if (sizes.length && !selectedSize) {
+    document.getElementById('sizeHint').classList.add('show');
+    document.getElementById('sizesGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  cart.add(product, 1, selectedSize);
+  renderCartBadge();
+  showToast(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} added to cart! 🛍️`, 'success');
+}
+
+// ── Buy Now (direct WhatsApp for this single product) ─────────
+function handleBuyNow() {
+  const sizes = product.sizes && product.sizes.length ? product.sizes : [];
+  if (sizes.length && !selectedSize) {
+    document.getElementById('sizeHint').classList.add('show');
+    document.getElementById('sizesGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // Build direct WhatsApp message for this product
+  const images = [];
+  if (product.images && product.images.length) images.push(...product.images.filter(Boolean));
+  if (product.image_url && !images.includes(product.image_url)) images.push(product.image_url);
+
+  const imageSection = images.length ? `\n\n🖼️ *Product image:*\n${images[0]}` : '';
+
+  const msg = encodeURIComponent(
+    `🛍️ *Order Enquiry — Anaqa Kids*\n\n` +
+    `*Product:* ${product.name}\n` +
+    (selectedSize ? `*Size:* ${selectedSize}\n` : '') +
+    `*Price:* ₹${Number(product.price).toFixed(2)}\n` +
+    `*Category:* ${capitalize(product.category)}` +
+    imageSection +
+    `\n\n_I'd like to order this item. Please confirm availability._`
+  );
+  window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
+}
+
+// ── Related Products ──────────────────────────────────────────
+async function loadRelated(category, currentId) {
+  try {
+    const { products } = await getProducts({ category, limit: 4 });
+    const related = products.filter(p => p.id !== currentId).slice(0, 4);
+    if (!related.length) return;
+
+    const grid = document.getElementById('relatedGrid');
+    grid.innerHTML = related.map(p => productCardHTML(p)).join('');
+    grid.querySelectorAll('[data-product-id]').forEach(card => {
+      card.addEventListener('click', e => {
+        if (!e.target.classList.contains('add-to-cart-btn')) {
+          window.location.href = `product.html?id=${card.dataset.productId}`;
+        }
+      });
+    });
+    grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const p = related.find(x => x.id === btn.dataset.id);
+        if (p) { cart.add(p); renderCartBadge(); showToast(`${p.name} added to cart!`, 'success'); }
+      });
+    });
+
+    document.getElementById('relatedSection').style.display = '';
+  } catch {}
+}
+
+function productCardHTML(p) {
+  const img = (p.images && p.images[0]) || p.image_url;
+  const discount = p.original_price ? Math.round((1 - p.price / p.original_price) * 100) : 0;
+  const outOfStock = p.stock === 0;
+  const badge = outOfStock ? '<span class="product-badge badge-out">Out of Stock</span>'
+    : p.is_new_arrival ? '<span class="product-badge badge-new">New</span>'
+    : p.is_featured ? '<span class="product-badge badge-featured">Featured</span>' : '';
+  const imgHTML = img
+    ? `<img src="${escHtml(img)}" alt="${escHtml(p.name)}" loading="lazy" />`
+    : `<div class="product-img-placeholder"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+  return `<div class="product-card" data-product-id="${p.id}" style="cursor:pointer">
+    <div class="product-img-wrap">${imgHTML}${badge}</div>
+    <div class="product-body">
+      <p class="product-category">${escHtml(p.category)}</p>
+      <h3 class="product-name">${escHtml(p.name)}</h3>
+      <div class="product-price-row">
+        <span class="product-price">₹${p.price}</span>
+        ${p.original_price ? `<span class="product-original">₹${p.original_price}</span>` : ''}
+        ${discount > 0 ? `<span class="product-discount">${discount}% OFF</span>` : ''}
+      </div>
+      <button class="add-to-cart-btn" data-id="${p.id}" ${outOfStock ? 'disabled' : ''}>${outOfStock ? 'Out of Stock' : 'Add to Cart'}</button>
+    </div>
+  </div>`;
+}
+
+// ── Cart ──────────────────────────────────────────────────────
+function renderCartBadge() {
+  const count = cart.getCount();
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function renderCartDrawer() {
+  const items = cart.getItems();
+  const itemsEl = document.getElementById('cartItems');
+  const footerEl = document.getElementById('cartFooter');
+  if (!items.length) {
+    itemsEl.innerHTML = `<div class="cart-empty"><p>Your cart is empty</p></div>`;
+    footerEl.innerHTML = ''; return;
+  }
+  itemsEl.innerHTML = items.map(item => `
+    <div class="cart-item">
+      ${item.image_url ? `<img class="cart-item-img" src="${escHtml(item.image_url)}" alt="${escHtml(item.name)}" />` : `<div class="cart-item-img"></div>`}
+      <div class="cart-item-info">
+        <p class="cart-item-name">${escHtml(item.name)}${item.size ? ` <span style="color:var(--teal);font-size:12px">(${escHtml(item.size)})</span>` : ''}</p>
+        <p class="cart-item-price">₹${(item.price * item.qty).toFixed(2)}</p>
+        <div class="cart-item-qty">
+          <button class="qty-btn" data-action="dec" data-key="${item.cartKey}">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" data-action="inc" data-key="${item.cartKey}">+</button>
+        </div>
+      </div>
+      <span class="cart-remove" data-key="${item.cartKey}">✕</span>
+    </div>`).join('');
+
+  footerEl.innerHTML = `
+    <div class="cart-total-row"><span class="cart-total-label">Total</span><span class="cart-total-amount">₹${cart.getTotal().toFixed(2)}</span></div>
+    <button class="btn btn-whatsapp btn-block" id="checkoutBtn">Order via WhatsApp</button>`;
+
+  document.getElementById('checkoutBtn').addEventListener('click', openCheckout);
+  itemsEl.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key; const action = btn.dataset.action;
+      const it = cart.getItems().find(i => i.cartKey === key);
+      if (it) cart.updateQty(key, action === 'inc' ? it.qty + 1 : it.qty - 1);
+      renderCartDrawer(); renderCartBadge();
+    });
+  });
+  itemsEl.querySelectorAll('.cart-remove').forEach(btn => {
+    btn.addEventListener('click', () => { cart.remove(btn.dataset.key); renderCartDrawer(); renderCartBadge(); });
+  });
+}
+
+function openCheckout() {
+  const items = cart.getItems();
+  if (!items.length) return;
+  document.getElementById('checkoutSummary').innerHTML = `
+    <p class="order-summary-title">Order Summary</p>
+    ${items.map(i => `<div class="order-summary-item"><span>${escHtml(i.name)}${i.size ? ` (${i.size})` : ''} ×${i.qty}</span><span>₹${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
+    <div class="order-summary-total"><span>Total</span><span>₹${cart.getTotal().toFixed(2)}</span></div>`;
+  document.getElementById('checkoutOverlay').classList.add('open');
+}
+
+function bindCartDrawer() {
+  document.getElementById('cartBtn').addEventListener('click', () => { renderCartDrawer(); document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOverlay').classList.add('open'); });
+  document.getElementById('cartClose').addEventListener('click', () => { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOverlay').classList.remove('open'); });
+  document.getElementById('cartOverlay').addEventListener('click', () => { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOverlay').classList.remove('open'); });
+}
+
+function bindCheckout() {
+  document.getElementById('checkoutClose').addEventListener('click', () => document.getElementById('checkoutOverlay').classList.remove('open'));
+  document.getElementById('checkoutOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) document.getElementById('checkoutOverlay').classList.remove('open'); });
+  document.getElementById('checkoutForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('coName').value.trim();
+    const phone = document.getElementById('coPhone').value.trim();
+    const address = document.getElementById('coAddress').value.trim();
+    if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
+    try {
+      const { createOrder } = await import('./src/lib/supabase.js');
+      await createOrder({ customer_name: name, customer_phone: phone, customer_address: address, items: cart.getItems(), total_amount: cart.getTotal(), status: 'pending' });
+    } catch {}
+    const msg = cart.buildWhatsAppMessage(name, phone, address || 'Not provided');
+    window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
+    cart.clear(); renderCartBadge();
+    document.getElementById('checkoutOverlay').classList.remove('open');
+    document.getElementById('cartDrawer').classList.remove('open');
+    document.getElementById('cartOverlay').classList.remove('open');
+    showToast('Order sent via WhatsApp! 🎉', 'success');
+  });
+}
+
+function showToast(msg, type = '') {
+  let c = document.querySelector('.toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg;
+  c.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
+function escHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+window.addEventListener('cart:updated', renderCartBadge);
+init();
+</script>
+</body>
+</html>

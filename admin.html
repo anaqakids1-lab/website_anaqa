@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Anaqa Kids</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/styles/main.css" />
+  <link rel="stylesheet" href="src/styles/admin.css" />
+</head>
+<body class="admin-body">
+
+<!-- ── ADMIN HEADER ────────────────────────────────────────── -->
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-ar">عناقة</span>
+      <span class="logo-en">ANAQA ADMIN</span>
+    </a>
+    <div class="admin-header-right">
+      <span class="admin-user-email" id="adminEmail">Loading…</span>
+      <button class="btn btn-secondary btn-sm" id="adminSignOut">Sign Out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── ADMIN LAYOUT ─────────────────────────────────────────── -->
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <nav class="admin-sidebar">
+    <button class="sidebar-item active" data-tab="dashboard">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="sidebar-item" data-tab="products">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+      Products
+    </button>
+    <button class="sidebar-item" data-tab="orders">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Orders
+    </button>
+    <button class="sidebar-item" data-tab="customers">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </button>
+    <a href="index.html" class="sidebar-item" style="text-decoration:none">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      View Store
+    </a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Access denied screen -->
+    <div id="accessDenied" style="display:none" class="access-denied">
+      <div class="access-denied-inner">
+        <div style="font-size:3rem">🔒</div>
+        <h2>Admin Access Required</h2>
+        <p>Please sign in with an admin account to access this dashboard.</p>
+        <button class="btn btn-primary" id="goSignIn">Sign In as Admin</button>
+      </div>
+    </div>
+
+    <!-- Admin Auth Modal (inline) -->
+    <div id="adminAuthSection" style="display:none" class="admin-auth-section">
+      <div class="admin-auth-card">
+        <div class="logo" style="justify-content:center;margin-bottom:24px">
+          <span class="logo-ar">عناقة</span><span class="logo-en">ADMIN LOGIN</span>
+        </div>
+        <div id="adminLoginMsg"></div>
+        <form id="adminLoginForm">
+          <div class="form-group"><label>Email</label><input type="email" id="alEmail" value="admin@anaqakids.com" required /></div>
+          <div class="form-group"><label>Password</label><input type="password" id="alPass" required /></div>
+          <button type="submit" class="btn btn-primary btn-block">Sign In to Dashboard</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div class="admin-tab" id="tab-dashboard">
+      <div class="admin-tab-header">
+        <h1>Dashboard</h1>
+        <p id="dashGreeting"></p>
+      </div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card skeleton-card"></div>
+        <div class="stat-card skeleton-card"></div>
+        <div class="stat-card skeleton-card"></div>
+        <div class="stat-card skeleton-card"></div>
+        <div class="stat-card skeleton-card"></div>
+      </div>
+      <div class="recent-orders-section">
+        <h2 class="admin-section-title">Recent Orders</h2>
+        <div id="recentOrders"></div>
+      </div>
+    </div>
+
+    <!-- Products Tab -->
+    <div class="admin-tab hidden" id="tab-products">
+      <div class="admin-tab-header">
+        <h1>Products</h1>
+        <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+      </div>
+      <div class="admin-toolbar">
+        <input type="text" class="search-input" id="productSearch" placeholder="Search products…" style="max-width:300px" />
+        <select id="productCatFilter" class="search-input" style="max-width:180px">
+          <option value="">All Categories</option>
+          <option value="girls">Girls</option>
+          <option value="boys">Boys</option>
+          <option value="baby">Baby</option>
+          <option value="winter">Winter</option>
+        </select>
+      </div>
+      <div id="productsTable"></div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div class="admin-tab hidden" id="tab-orders">
+      <div class="admin-tab-header">
+        <h1>Orders</h1>
+        <select id="orderStatusFilter" class="search-input" style="max-width:200px">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div id="ordersTable"></div>
+    </div>
+
+    <!-- Customers Tab -->
+    <div class="admin-tab hidden" id="tab-customers">
+      <div class="admin-tab-header"><h1>Customers</h1></div>
+      <div id="customersTable"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── PRODUCT FORM MODAL ────────────────────────────────────── -->
+<div class="modal-overlay" id="productModalOverlay">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h3 id="productModalTitle">Add Product</h3>
+      <button class="modal-close" id="productModalClose">✕</button>
+    </div>
+    <form id="productForm" class="checkout-form" enctype="multipart/form-data">
+      <input type="hidden" id="pId" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" id="pName" required />
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="pCategory" required>
+            <option value="">Select…</option>
+            <option value="girls">Girls</option>
+            <option value="boys">Boys</option>
+            <option value="baby">Baby</option>
+            <option value="winter">Winter</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="pDesc" rows="3"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (₹) *</label>
+          <input type="number" id="pPrice" required min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Original Price (₹)</label>
+          <input type="number" id="pOrigPrice" min="0" step="0.01" placeholder="For showing discount" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Stock Quantity *</label>
+        <input type="number" id="pStock" required min="0" value="0" />
+      </div>
+      <div class="form-group">
+        <label>Product Images (select multiple)</label>
+        <input type="file" id="pImages" accept="image/*" multiple />
+        <div id="pImagesPreview" style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:flex-start"></div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:6px">First image = main photo shown on shop. You can add more images for the product gallery.</p>
+      </div>
+      <div class="form-group">
+        <label>Available Sizes</label>
+        <input type="text" id="pSizes" placeholder="e.g. XS, S, M, L, XL  or  2Y, 4Y, 6Y, 8Y, 10Y" />
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Comma-separated. Leave blank if one-size-fits-all.</p>
+      </div>
+      <div style="display:flex;gap:20px;margin-bottom:18px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="pFeatured" /> Featured
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="pNewArrival" /> New Arrival
+        </label>
+      </div>
+      <div id="productFormMsg"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary" id="productSubmitBtn">Save Product</button>
+        <button type="button" class="btn btn-secondary" id="productCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script type="module" src="src/admin.js"></script>
+</body>
+</html>
