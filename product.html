@@ -465,15 +465,29 @@ function handleAddToCart() {
   renderCartBadge();
   showToast(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} added to cart! 🛍️`, 'success');
 }
-
-// ── Buy Now (direct WhatsApp for this single product) ─────────
 function handleBuyNow() {
   const sizes = product.sizes && product.sizes.length ? product.sizes : [];
+
   if (sizes.length && !selectedSize) {
     document.getElementById('sizeHint').classList.add('show');
-    document.getElementById('sizesGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('sizesGrid').scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
     return;
   }
+
+  // Remove old cart items
+  cart.clear();
+
+  // Add current product
+  cart.add(product, 1, selectedSize);
+
+  renderCartBadge();
+
+  // Open customer details form
+  openCheckout();
+}
 
   // Build direct WhatsApp message for this product
   const images = [];
