@@ -489,24 +489,7 @@ function handleBuyNow() {
   openCheckout();
 }
 
-  // Build direct WhatsApp message for this product
-  const images = [];
-  if (product.images && product.images.length) images.push(...product.images.filter(Boolean));
-  if (product.image_url && !images.includes(product.image_url)) images.push(product.image_url);
-
-  const imageSection = images.length ? `\n\n🖼️ *Product image:*\n${images[0]}` : '';
-
-  const msg = encodeURIComponent(
-    `🛍️ *Order Enquiry — Anaqa Kids*\n\n` +
-    `*Product:* ${product.name}\n` +
-    (selectedSize ? `*Size:* ${selectedSize}\n` : '') +
-    `*Price:* ₹${Number(product.price).toFixed(2)}\n` +
-    `*Category:* ${capitalize(product.category)}` +
-    imageSection +
-    `\n\n_I'd like to order this item. Please confirm availability._`
-  );
-  window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
-}
+  
 
 // ── Related Products ──────────────────────────────────────────
 async function loadRelated(category, currentId) {
