@@ -309,7 +309,6 @@ import { cart } from './src/lib/cart.js';
 let product = null;
 let currentImageIdx = 0;
 let selectedSize = '';
-let buyNowItem = null; // tracks when "Order via WhatsApp" is used directly
 
 // ── Load Product from URL ─────────────────────────────────────
 async function init() {
@@ -467,7 +466,7 @@ function handleAddToCart() {
   showToast(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} added to cart! 🛍️`, 'success');
 }
 
-// ── Buy Now — opens checkout form, saves order, then WhatsApp ──
+// ── Buy Now (direct WhatsApp for this single product) ─────────
 function handleBuyNow() {
   const sizes = product.sizes && product.sizes.length ? product.sizes : [];
   if (sizes.length && !selectedSize) {
@@ -476,35 +475,23 @@ function handleBuyNow() {
     return;
   }
 
-  // Store the single product as a buy-now item
-  buyNowItem = {
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    size: selectedSize || '',
-    qty: 1,
-    image_url: (product.images && product.images[0]) || product.image_url || '',
-    cartKey: product.id + (selectedSize || ''),
-  };
+  // Build direct WhatsApp message for this product
+  const images = [];
+  if (product.images && product.images.length) images.push(...product.images.filter(Boolean));
+  if (product.image_url && !images.includes(product.image_url)) images.push(product.image_url);
 
-  // Show order summary in the modal
-  document.getElementById('checkoutSummary').innerHTML = `
-    <p class="order-summary-title">Order Summary</p>
-    <div class="order-summary-item">
-      <span>${escHtml(product.name)}${selectedSize ? ` (${selectedSize})` : ''} ×1</span>
-      <span>₹${Number(product.price).toFixed(2)}</span>
-    </div>
-    <div class="order-summary-total">
-      <span>Total</span>
-      <span>₹${Number(product.price).toFixed(2)}</span>
-    </div>`;
+  const imageSection = images.length ? `\n\n🖼️ *Product image:*\n${images[0]}` : '';
 
-  // Clear the form fields for a fresh entry
-  document.getElementById('coName').value = '';
-  document.getElementById('coPhone').value = '';
-  document.getElementById('coAddress').value = '';
-
-  document.getElementById('checkoutOverlay').classList.add('open');
+  const msg = encodeURIComponent(
+    `🛍️ *Order Enquiry — Anaqa Kids*\n\n` +
+    `*Product:* ${product.name}\n` +
+    (selectedSize ? `*Size:* ${selectedSize}\n` : '') +
+    `*Price:* ₹${Number(product.price).toFixed(2)}\n` +
+    `*Category:* ${capitalize(product.category)}` +
+    imageSection +
+    `\n\n_I'd like to order this item. Please confirm availability._`
+  );
+  window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
 }
 
 // ── Related Products ──────────────────────────────────────────
@@ -595,7 +582,7 @@ function renderCartDrawer() {
     <div class="cart-total-row"><span class="cart-total-label">Total</span><span class="cart-total-amount">₹${cart.getTotal().toFixed(2)}</span></div>
     <button class="btn btn-whatsapp btn-block" id="checkoutBtn">Order via WhatsApp</button>`;
 
-  document.getElementById('checkoutBtn').addEventListener('click', openCartCheckout);
+  document.getElementById('checkoutBtn').addEventListener('click', openCheckout);
   itemsEl.querySelectorAll('.qty-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key; const action = btn.dataset.action;
@@ -609,17 +596,13 @@ function renderCartDrawer() {
   });
 }
 
-function openCartCheckout() {
+function openCheckout() {
   const items = cart.getItems();
   if (!items.length) return;
-  buyNowItem = null; // make sure we use cart items, not buy-now
   document.getElementById('checkoutSummary').innerHTML = `
     <p class="order-summary-title">Order Summary</p>
     ${items.map(i => `<div class="order-summary-item"><span>${escHtml(i.name)}${i.size ? ` (${i.size})` : ''} ×${i.qty}</span><span>₹${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
     <div class="order-summary-total"><span>Total</span><span>₹${cart.getTotal().toFixed(2)}</span></div>`;
-  document.getElementById('coName').value = '';
-  document.getElementById('coPhone').value = '';
-  document.getElementById('coAddress').value = '';
   document.getElementById('checkoutOverlay').classList.add('open');
 }
 
@@ -630,60 +613,31 @@ function bindCartDrawer() {
 }
 
 function bindCheckout() {
-  document.getElementById('checkoutClose').addEventListener('click', () => {
-    document.getElementById('checkoutOverlay').classList.remove('open');
-    buyNowItem = null;
-  });
-  document.getElementById('checkoutOverlay').addEventListener('click', e => {
-    if (e.target === e.currentTarget) {
-      document.getElementById('checkoutOverlay').classList.remove('open');
-      buyNowItem = null;
-    }
-  });
-
+  document.getElementById('checkoutClose').addEventListener('click', () => document.getElementById('checkoutOverlay').classList.remove('open'));
+  document.getElementById('checkoutOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) document.getElementById('checkoutOverlay').classList.remove('open'); });
   document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
     const name = document.getElementById('coName').value.trim();
     const phone = document.getElementById('coPhone').value.trim();
     const address = document.getElementById('coAddress').value.trim();
     if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
-
-    // Use buy-now single item OR cart items
-    const items = buyNowItem ? [buyNowItem] : cart.getItems();
-    const total = buyNowItem ? buyNowItem.price : cart.getTotal();
-
     try {
+      const { createOrder } = await import('./src/lib/supabase.js');
       await createOrder({
         customer_name: name,
         customer_phone: phone,
         customer_address: address || null,
         customer_id: null,
-        items: items,
-        total_amount: total,
+        items: cart.getItems(),
+        total_amount: cart.getTotal(),
         status: 'pending',
       });
     } catch (orderErr) {
       console.error('[Anaqa] Order failed to save:', orderErr);
-      // Still open WhatsApp even if DB save fails
     }
-
-    // Build WhatsApp message
-    const itemLines = items.map(i =>
-      `• ${i.name}${i.size ? ` (${i.size})` : ''} ×${i.qty} — ₹${(i.price * i.qty).toFixed(2)}`
-    ).join('\n');
-    const msg = encodeURIComponent(
-      `🛍️ *New Order — Anaqa Kids*\n\n` +
-      `*Name:* ${name}\n` +
-      `*Phone:* ${phone}\n` +
-      (address ? `*Address:* ${address}\n` : '') +
-      `\n*Items:*\n${itemLines}\n\n` +
-      `*Total: ₹${Number(total).toFixed(2)}*`
-    );
+    const msg = cart.buildWhatsAppMessage(name, phone, address || 'Not provided');
     window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
-
-    // Clear state
-    if (!buyNowItem) { cart.clear(); renderCartBadge(); }
-    buyNowItem = null;
+    cart.clear(); renderCartBadge();
     document.getElementById('checkoutOverlay').classList.remove('open');
     document.getElementById('cartDrawer').classList.remove('open');
     document.getElementById('cartOverlay').classList.remove('open');
@@ -697,7 +651,7 @@ function showToast(msg, type = '') {
   t.className = `toast ${type}`; t.textContent = msg;
   c.appendChild(t); setTimeout(() => t.remove(), 3500);
 }
-function escHtml(s) { return String(s).replace(/[&<>\"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 window.addEventListener('cart:updated', renderCartBadge);

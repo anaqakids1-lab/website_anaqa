@@ -102,28 +102,49 @@ async function loadOrders() {
   } catch (e) { showToast(e.message, 'error'); }
 }
 
+async function deleteOrder(id) {
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+  if (error) throw error;
+}
+
 function renderOrdersTable(orders, containerId, compact) {
   const el = document.getElementById(containerId);
-  if (!orders.length) { el.innerHTML = '<p style="color:var(--text-muted);padding:20px">No orders found.</p>'; return; }
+  if (!orders.length) { el.innerHTML = '<p style="color:var(--text-muted);padding:20px 0">No orders found.</p>'; return; }
   el.innerHTML = `<div class="admin-table-wrap"><table class="admin-table">
     <thead><tr><th>Date</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Status</th>${compact ? '' : '<th>Actions</th>'}</tr></thead>
     <tbody>${orders.map(o => `
       <tr>
-        <td style="font-size:12px;white-space:nowrap">${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
-        <td><strong>${escHtml(o.customer_name)}</strong></td>
-        <td><a href="tel:${escHtml(o.customer_phone)}" style="color:var(--teal)">${escHtml(o.customer_phone)}</a></td>
-        <td style="font-size:12px">${Array.isArray(o.items) ? o.items.map(i => `${escHtml(i.name)}${i.size ? ` (${i.size})` : ''} ×${i.qty}`).join(', ') : '—'}</td>
-        <td><strong>₹${Number(o.total_amount).toFixed(2)}</strong></td>
+        <td style="font-size:11px;white-space:nowrap">${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+        <td><strong style="font-size:13px">${escHtml(o.customer_name)}</strong></td>
+        <td><a href="tel:${escHtml(o.customer_phone)}" style="color:var(--teal);font-size:12px">${escHtml(o.customer_phone)}</a></td>
+        <td style="font-size:11px;max-width:180px">${Array.isArray(o.items) ? o.items.map(i => `${escHtml(i.name)}${i.size ? ` (${i.size})` : ''} ×${i.qty}`).join(', ') : '—'}</td>
+        <td><strong style="color:var(--teal)">₹${Number(o.total_amount).toFixed(0)}</strong></td>
         <td>${compact
           ? `<span class="status-badge status-${o.status}">${o.status}</span>`
           : `<select class="status-select" data-id="${o.id}">${['pending','confirmed','shipped','delivered','cancelled'].map(s=>`<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('')}</select>`}
         </td>
-        ${compact ? '' : `<td><div class="table-actions"><a href="https://wa.me/${o.customer_phone.replace(/\D/g,'')}" target="_blank" class="action-btn action-btn-wa">WhatsApp</a></div></td>`}
+        ${compact ? '' : `<td><div class="table-actions">
+          <a href="https://wa.me/${o.customer_phone.replace(/\D/g,'')}" target="_blank" class="action-btn action-btn-wa">WA</a>
+          <button class="action-btn action-btn-delete" data-id="${o.id}" title="Delete order">Delete</button>
+        </div></td>`}
       </tr>`).join('')}
     </tbody></table></div>`;
   if (!compact) {
     el.querySelectorAll('.status-select').forEach(sel => {
-      sel.addEventListener('change', async () => { try { await updateOrderStatus(sel.dataset.id, sel.value); showToast('Status updated', 'success'); } catch (e) { showToast(e.message, 'error'); } });
+      sel.addEventListener('change', async () => {
+        try { await updateOrderStatus(sel.dataset.id, sel.value); showToast('Status updated', 'success'); }
+        catch (e) { showToast(e.message, 'error'); }
+      });
+    });
+    el.querySelectorAll('.action-btn-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this order permanently? This cannot be undone.')) return;
+        try {
+          await deleteOrder(btn.dataset.id);
+          showToast('Order deleted', 'success');
+          loadOrders();
+        } catch(e) { showToast(e.message, 'error'); }
+      });
     });
   }
 }
