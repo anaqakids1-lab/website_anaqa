@@ -267,7 +267,20 @@ function bindEvents() {
     const phone = document.getElementById('coPhone').value.trim();
     const address = document.getElementById('coAddress').value.trim();
     if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
-    try { await createOrder({ customer_name: name, customer_phone: phone, customer_address: address, items: cart.getItems(), total_amount: cart.getTotal(), status: 'pending' }); } catch {}
+    try {
+      await createOrder({
+        customer_name: name,
+        customer_phone: phone,
+        customer_address: address || null,
+        customer_id: null,
+        items: cart.getItems(),
+        total_amount: cart.getTotal(),
+        status: 'pending',
+      });
+    } catch (orderErr) {
+      console.error('[Anaqa] Order failed to save:', orderErr);
+      // Still open WhatsApp even if DB save fails
+    }
     const msg = cart.buildWhatsAppMessage(name, phone, address || 'Not provided');
     window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
     cart.clear(); renderCartBadge();

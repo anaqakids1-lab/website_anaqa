@@ -80,8 +80,26 @@ export async function uploadProductImage(file) {
 
 // ── Orders ─────────────────────────────────────────────────────
 export async function createOrder(order) {
-  const { data, error } = await supabase.from('orders').insert(order).select().single();
-  if (error) throw error;
+  // Ensure items is stored as JSON string for JSONB column compatibility
+  const payload = {
+    ...order,
+    items: Array.isArray(order.items) ? order.items : [],
+    customer_id: null, // explicitly null for guest orders
+  };
+
+  console.log('[Anaqa] Saving order:', payload);
+
+  const { data, error } = await supabase
+    .from('orders')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Anaqa] Order save error:', error);
+    throw error;
+  }
+  console.log('[Anaqa] Order saved successfully:', data);
   return data;
 }
 export async function getOrders({ page = 1, limit = 20, status } = {}) {
