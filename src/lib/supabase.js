@@ -80,41 +80,27 @@ export async function uploadProductImage(file) {
 
 // ── Orders ─────────────────────────────────────────────────────
 export async function createOrder(order) {
-  const SUPABASE_URL = 'https://btlelhyclzswnyleryox.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_3py8Q3GPQ8M1ALXG2x2DzA_cG5cRO49';
-
+  // Ensure items is stored as JSON string for JSONB column compatibility
   const payload = {
-    customer_name: String(order.customer_name || ''),
-    customer_phone: String(order.customer_phone || ''),
-    customer_address: order.customer_address || null,
-    customer_id: null,
+    ...order,
     items: Array.isArray(order.items) ? order.items : [],
-    total_amount: Number(order.total_amount) || 0,
-    status: 'pending',
-    notes: order.notes || null,
+    customer_id: null, // explicitly null for guest orders
   };
 
   console.log('[Anaqa] Saving order:', payload);
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Prefer': 'return=representation',
-    },
-    body: JSON.stringify(payload),
-  });
+  const { data, error } = await supabase
+    .from('orders')
+    .insert(payload)
+    .select()
+    .single();
 
-  const text = await response.text();
-  console.log('[Anaqa] Order response:', response.status, text);
-
-  if (!response.ok) {
-    throw new Error(`Order failed (${response.status}): ${text}`);
+  if (error) {
+    console.error('[Anaqa] Order save error:', error);
+    throw error;
   }
-
-  try { return JSON.parse(text)[0]; } catch { return null; }
+  console.log('[Anaqa] Order saved successfully:', data);
+  return data;
 }
 export async function getOrders({ page = 1, limit = 20, status } = {}) {
   let query = supabase.from('orders').select('*', { count: 'exact' });

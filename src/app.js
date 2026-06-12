@@ -272,13 +272,14 @@ function bindEvents() {
         customer_name: name,
         customer_phone: phone,
         customer_address: address || null,
+        customer_id: null,
         items: cart.getItems(),
         total_amount: cart.getTotal(),
+        status: 'pending',
       });
-      console.log('[Anaqa] Order saved to database ✓');
     } catch (orderErr) {
-      console.error('[Anaqa] Order DB save failed:', orderErr.message);
-      // Still send WhatsApp — order is not lost
+      console.error('[Anaqa] Order failed to save:', orderErr);
+      // Still open WhatsApp even if DB save fails
     }
     const msg = cart.buildWhatsAppMessage(name, phone, address || 'Not provided');
     window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
