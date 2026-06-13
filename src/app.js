@@ -14,10 +14,29 @@ async function init() {
   loadFeatured();
   loadArrivals();
   bindEvents();
-  supabase.auth.onAuthStateChange(async (_e, session) => {
+  
+  // Handlers for dynamic session changes and confirmation redirects
+  supabase.auth.onAuthStateChange(async (event, session) => {
     state.session = session;
     state.admin = session ? await isAdmin() : false;
     updateAuthBtn();
+
+    // Catch the successful email confirmation redirect automatically from Brevo links
+    if (event === 'SIGNED_IN' && session) {
+      console.log('Email verified successfully:', session.user);
+      
+      // 1. Notify the customer
+      if (typeof showToast === 'function') {
+        showToast('Email confirmed successfully! Welcome to Anaqa Kids. ✨', 'success');
+      } else {
+        alert('Email confirmed successfully! Welcome to Anaqa Kids. ✨');
+      }
+      
+      // 2. Wipe out the internal security hash parameters from the browser address bar
+      if (window.location.hash) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   });
 }
 
@@ -133,8 +152,10 @@ function renderPagination() {
 function renderCartBadge() {
   const count = cart.getCount();
   const badge = document.getElementById('cartBadge');
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'flex' : 'none';
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
 }
 
 function renderCartDrawer() {
@@ -163,145 +184,3 @@ function renderCartDrawer() {
   footerEl.innerHTML = `
     <div class="cart-total-row"><span class="cart-total-label">Total</span><span class="cart-total-amount">₹${cart.getTotal().toFixed(2)}</span></div>
     <button class="btn btn-whatsapp btn-block" id="checkoutBtn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      Order via WhatsApp
-    </button>`;
-
-  document.getElementById('checkoutBtn').addEventListener('click', openCheckout);
-  itemsEl.querySelectorAll('.qty-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.key; const action = btn.dataset.action;
-      const it = cart.getItems().find(i => i.cartKey === key);
-      if (it) cart.updateQty(key, action === 'inc' ? it.qty + 1 : it.qty - 1);
-      renderCartDrawer(); renderCartBadge();
-    });
-  });
-  itemsEl.querySelectorAll('.cart-remove').forEach(btn => {
-    btn.addEventListener('click', () => { cart.remove(btn.dataset.key); renderCartDrawer(); renderCartBadge(); });
-  });
-}
-
-function openCheckout() {
-  const items = cart.getItems();
-  if (!items.length) return;
-  document.getElementById('checkoutSummary').innerHTML = `
-    <p class="order-summary-title">Order Summary</p>
-    ${items.map(i => `<div class="order-summary-item"><span>${escHtml(i.name)}${i.size ? ` (${i.size})` : ''} ×${i.qty}</span><span>₹${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
-    <div class="order-summary-total"><span>Total</span><span>₹${cart.getTotal().toFixed(2)}</span></div>`;
-  openModal('checkoutOverlay');
-}
-
-function renderAuthModal() {
-  if (state.session) {
-    document.getElementById('authModalTitle').textContent = 'My Account';
-    document.getElementById('authContent').innerHTML = `
-      <div class="auth-form">
-        <p style="margin-bottom:14px">Signed in as <strong>${escHtml(state.session.user.email)}</strong></p>
-        ${state.admin ? `<a href="admin.html" class="btn btn-primary btn-block" style="margin-bottom:12px">Admin Dashboard</a>` : ''}
-        <button class="btn btn-secondary btn-block" id="signOutBtn">Sign Out</button>
-      </div>`;
-    document.getElementById('signOutBtn').addEventListener('click', async () => { await signOut(); closeModal('authOverlay'); showToast('Signed out'); });
-    return;
-  }
-  document.getElementById('authModalTitle').textContent = 'Sign In / Register';
-  document.getElementById('authContent').innerHTML = `
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="signin">Sign In</button>
-      <button class="auth-tab" data-tab="signup">Create Account</button>
-    </div><div id="authTabContent"></div>`;
-  renderAuthTab('signin');
-  document.querySelectorAll('.auth-tab').forEach(tab => {
-    tab.addEventListener('click', () => { document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); renderAuthTab(tab.dataset.tab); });
-  });
-}
-
-function renderAuthTab(tab) {
-  const content = document.getElementById('authTabContent');
-  if (tab === 'signin') {
-    content.innerHTML = `<form class="auth-form" id="signinForm"><div id="signinMsg"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="siEmail" required /></div>
-      <div class="form-group"><label>Password</label><input type="password" id="siPass" required /></div>
-      <button type="submit" class="btn btn-primary btn-block">Sign In</button></form>`;
-    document.getElementById('signinForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      try { await signIn(document.getElementById('siEmail').value, document.getElementById('siPass').value); closeModal('authOverlay'); showToast('Welcome back!', 'success'); }
-      catch (err) { document.getElementById('signinMsg').innerHTML = `<div class="auth-msg error">${escHtml(err.message)}</div>`; }
-    });
-  } else {
-    content.innerHTML = `<form class="auth-form" id="signupForm"><div id="signupMsg"></div>
-      <div class="form-group"><label>Full Name</label><input type="text" id="suName" required /></div>
-      <div class="form-group"><label>Email</label><input type="email" id="suEmail" required /></div>
-      <div class="form-group"><label>Phone</label><input type="tel" id="suPhone" /></div>
-      <div class="form-group"><label>Password</label><input type="password" id="suPass" required minlength="6" /></div>
-      <button type="submit" class="btn btn-primary btn-block">Create Account</button></form>`;
-    document.getElementById('signupForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      try { await signUp(document.getElementById('suEmail').value, document.getElementById('suPass').value, document.getElementById('suName').value, document.getElementById('suPhone').value); document.getElementById('signupMsg').innerHTML = `<div class="auth-msg success">Account created! Check your email to verify.</div>`; }
-      catch (err) { document.getElementById('signupMsg').innerHTML = `<div class="auth-msg error">${escHtml(err.message)}</div>`; }
-    });
-  }
-}
-
-function updateAuthBtn() { const btn = document.getElementById('authBtn'); if (btn) btn.title = state.session ? 'My Account' : 'Sign In'; }
-
-function bindEvents() {
-  document.getElementById('categoryFilters').querySelectorAll('.cat-pill').forEach(pill =>
-    pill.addEventListener('click', () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); state.category = pill.dataset.cat; state.page = 1; loadProducts(); })
-  );
-  document.getElementById('searchToggle').addEventListener('click', () => { document.getElementById('searchBar').classList.toggle('open'); if (document.getElementById('searchBar').classList.contains('open')) document.getElementById('searchInput').focus(); });
-  document.getElementById('searchClose').addEventListener('click', () => document.getElementById('searchBar').classList.remove('open'));
-  let st;
-  document.getElementById('searchInput').addEventListener('input', e => { clearTimeout(st); st = setTimeout(() => { state.search = e.target.value; state.page = 1; loadProducts(); }, 400); });
-  document.getElementById('cartBtn').addEventListener('click', () => { renderCartDrawer(); openCartDrawer(); });
-  document.getElementById('cartClose').addEventListener('click', closeCartDrawer);
-  document.getElementById('cartOverlay').addEventListener('click', closeCartDrawer);
-  document.getElementById('authBtn').addEventListener('click', () => { renderAuthModal(); openModal('authOverlay'); });
-  document.getElementById('authClose').addEventListener('click', () => closeModal('authOverlay'));
-  document.getElementById('authOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('authOverlay'); });
-  document.getElementById('checkoutClose').addEventListener('click', () => closeModal('checkoutOverlay'));
-  document.getElementById('checkoutOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('checkoutOverlay'); });
-  document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('nav').classList.toggle('open'));
-  document.getElementById('checkoutForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = document.getElementById('coName').value.trim();
-    const phone = document.getElementById('coPhone').value.trim();
-    const address = document.getElementById('coAddress').value.trim();
-    if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
-    try {
-      await createOrder({
-        customer_name: name,
-        customer_phone: phone,
-        customer_address: address || null,
-        customer_id: null,
-        items: cart.getItems(),
-        total_amount: cart.getTotal(),
-        status: 'pending',
-      });
-    } catch (orderErr) {
-      console.error('[Anaqa] Order failed to save:', orderErr);
-      // Still open WhatsApp even if DB save fails
-    }
-    const msg = cart.buildWhatsAppMessage(name, phone, address || 'Not provided');
-    window.open(`https://wa.me/919103228518?text=${msg}`, '_blank');
-    cart.clear(); renderCartBadge();
-    closeModal('checkoutOverlay'); closeCartDrawer();
-    showToast('Order sent via WhatsApp! 🎉', 'success');
-  });
-  window.addEventListener('cart:updated', renderCartBadge);
-}
-
-function openCartDrawer() { document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartOverlay').classList.add('open'); }
-function closeCartDrawer() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartOverlay').classList.remove('open'); }
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function showToast(msg, type = '') {
-  let c = document.querySelector('.toast-container');
-  if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); }
-  const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
-  c.appendChild(t); setTimeout(() => t.remove(), 3200);
-}
-function escHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-init();
